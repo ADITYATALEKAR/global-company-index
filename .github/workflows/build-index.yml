@@ -1,0 +1,37 @@
+name: build-index
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Wikidata - companies with industry / products
+        run: python kb_wikidata.py
+      - name: Wikidata - wider pull (website or informative description)
+        run: python kb_wikidata_more.py
+      - name: Wikidata - dissolved / defunct companies
+        run: python kb_dissolved.py
+      - name: US FDA - drug and device makers
+        run: python fda_build.py
+      - name: merge + embed
+        env:
+          HF_HUB_DISABLE_SYMLINKS_WARNING: "1"
+        run: python kb_build.py
+      - name: pack
+        run: gzip -k kb_profiles.jsonl kb_types.jsonl && ls -la kb_* gov/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: global-company-index
+          path: |
+            kb_profiles.jsonl.gz
+            kb_types.jsonl.gz
+            kb_vectors.npy
+            kb_types.npy
+            gov/fda_kb.json
+          retention-days: 30

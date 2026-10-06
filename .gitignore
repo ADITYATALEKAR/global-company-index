@@ -1,0 +1,8 @@
+*.jsonl
+*.npy
+*.json
+*.gz
+*.zip
+*.tsv
+gov/
+__pycache__/
