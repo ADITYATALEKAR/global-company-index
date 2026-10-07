@@ -1,0 +1,35 @@
+name: websearch
+on:
+  workflow_dispatch:
+    inputs:
+      id_file:
+        description: "report id list in the ws-inputs release (ids + public market names only)"
+        required: true
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - name: inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download ws-inputs --pattern reports2.tsv.gz --pattern ${{ inputs.id_file }}
+      - name: this shard's reports
+        run: python3 -c "import json; ids=json.load(open('${{ inputs.id_file }}')); json.dump(ids[${{ matrix.shard }}::8], open('shard.json','w')); print(len(ids[${{ matrix.shard }}::8]))"
+      - name: search (DuckDuckGo + Google News), resumable, stops cleanly if blocked
+        env:
+          SEARCH_ONLY: "1"
+          SOURCES: "ddg,news"
+          DELAY: "2"
+        run: python3 websearch.py shard.json found.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: raw-${{ matrix.shard }}
+          path: found_raw.jsonl
+          retention-days: 7
