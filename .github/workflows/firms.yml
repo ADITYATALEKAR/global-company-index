@@ -1,0 +1,41 @@
+name: firms
+# Published market figures from research firms' own public pages (sitemaps -> matched report pages). Public data only.
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "sitemaps | fetch"
+        required: true
+        default: sitemaps
+      url_file:
+        description: "fetch stage: release asset (ws-inputs) with one URL per line, firms already interleaved"
+        required: false
+        default: ""
+jobs:
+  sitemaps:
+    if: ${{ inputs.stage == 'sitemaps' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 firm_pages.py sitemaps firm_urls.tsv
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: firm-urls, path: firm_urls.tsv, retention-days: 14 }
+  fetch:
+    if: ${{ inputs.stage == 'fetch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    steps:
+      - uses: actions/checkout@v4
+      - env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release download ws-inputs --pattern ${{ inputs.url_file }}
+      - run: python3 -c "u=open('${{ inputs.url_file }}').read().split(); open('mine.txt','w').write('\n'.join(u[${{ matrix.shard }}::20]))"
+      - run: python3 firm_pages.py fetch mine.txt pages.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: "pages-${{ matrix.shard }}", path: pages.jsonl, retention-days: 14 }
