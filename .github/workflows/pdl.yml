@@ -13,9 +13,9 @@ jobs:
       - name: People Data Labs free company dataset (CC BY 4.0), 2.4 GB zip
         run: |
           curl -sSL -o pdl.zip https://open.peopledatalabs.com/datasets/company_dataset/free_company_dataset.csv.zip
-          ls -la pdl.zip; unzip -l pdl.zip | tail -3
-      - name: match (streamed straight out of the zip)
-        run: unzip -p pdl.zip '*.csv' | python3 pdl_match.py -
+          ls -la pdl.zip; 7z l pdl.zip | tail -5
+      - name: match (streamed straight out of the zip with 7-Zip -- Info-ZIP cannot read this archive)
+        run: 7z e -so pdl.zip | python3 pdl_match.py -
       - uses: actions/upload-artifact@v4
         with:
           name: pdl-fill
