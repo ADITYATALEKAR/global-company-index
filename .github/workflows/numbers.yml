@@ -1,0 +1,38 @@
+name: numbers
+# Market size / CAGR / regional-share search summaries for the number check (inputs: report id + public market name only).
+on:
+  workflow_dispatch:
+    inputs:
+      id_file:
+        description: "report id list in the ws-inputs release"
+        required: true
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+                20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]
+    steps:
+      - uses: actions/checkout@v4
+      - name: inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download ws-inputs --pattern reports2.tsv.gz --pattern ${{ inputs.id_file }}
+      - name: this shard's reports
+        run: python3 -c "import json; ids=json.load(open('${{ inputs.id_file }}')); json.dump(ids[${{ matrix.shard }}::40], open('shard.json','w')); print(len(ids[${{ matrix.shard }}::40]))"
+      - name: search (DuckDuckGo summaries only), resumable, stops cleanly if blocked
+        env:
+          SEARCH_ONLY: "1"
+          SOURCES: "ddg"
+          QSET: "numbers"
+          DELAY: "1"
+        run: python3 websearch.py shard.json found.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: num-${{ matrix.shard }}
+          path: found_raw.jsonl
+          retention-days: 14

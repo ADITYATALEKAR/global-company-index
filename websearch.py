@@ -114,7 +114,9 @@ def main():
             if rid in have or rid in done or rid not in sub: continue
             res = []
             if "ddg" in SOURCES:
-                for q in (f"{sub[rid]} market key players", f"{sub[rid]} manufacturers"):
+                qs = ((f"{sub[rid]} market size CAGR", f"{sub[rid]} market share North America Europe Asia Pacific")
+                      if os.environ.get("QSET") == "numbers" else (f"{sub[rid]} market key players", f"{sub[rid]} manufacturers"))
+                for q in qs:                                   # QSET=numbers: market size / CAGR / regional share summaries
                     r = ddg(q)
                     if r is None: print("search blocked - stopping, rerun later", flush=True); return
                     res += r
