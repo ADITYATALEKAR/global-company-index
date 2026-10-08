@@ -1,0 +1,23 @@
+name: pdl-match
+on: workflow_dispatch
+jobs:
+  match:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - name: our company list (public names, website domains, countries only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download ws-inputs --pattern pdl_ours.tsv.gz
+      - name: People Data Labs free company dataset (CC BY 4.0), 2.4 GB zip
+        run: |
+          curl -sSL -o pdl.zip https://open.peopledatalabs.com/datasets/company_dataset/free_company_dataset.csv.zip
+          ls -la pdl.zip; unzip -l pdl.zip | tail -3
+      - name: match (streamed straight out of the zip)
+        run: unzip -p pdl.zip '*.csv' | python3 pdl_match.py -
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pdl-fill
+          path: pdl_fill.tsv.gz
+          retention-days: 7
