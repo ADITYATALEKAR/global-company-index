@@ -7,6 +7,10 @@ on:
         description: "sitemaps | fetch"
         required: true
         default: sitemaps
+      firms:
+        description: "sitemaps stage: comma-separated firm domains (empty = built-in list)"
+        required: false
+        default: ""
       url_file:
         description: "fetch stage: release asset (ws-inputs) with one URL per line, firms already interleaved"
         required: false
@@ -19,6 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 firm_pages.py sitemaps firm_urls.tsv
+        env: { FIRMS: "${{ inputs.firms }}" }
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: firm-urls, path: firm_urls.tsv, retention-days: 14 }

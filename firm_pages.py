@@ -16,6 +16,7 @@ FIRMS = ["precedenceresearch.com", "straitsresearch.com", "thebusinessresearchco
          "marketresearchfuture.com", "expertmarketresearch.com", "emergenresearch.com", "factmr.com", "persistencemarketresearch.com",
          "transparencymarketresearch.com", "skyquestt.com", "polarismarketresearch.com", "databridgemarketresearch.com",
          "towardshealthcare.com", "novaoneadvisor.com", "sphericalinsights.com", "researchandmarkets.com"]
+if os.environ.get("FIRMS"): FIRMS = [f.strip() for f in os.environ["FIRMS"].split(",") if f.strip()]   # second-tier run
 SKIP = re.compile(r"/(ja|ko|zh|de|fr|es|it|pt|ru|ar|cn|jp|kr|vi|tr|nl|pl|id|th)/|blog|news|career|about|contact|author|tag/|category|"
                   r"press-?release|faq|privacy|terms|webinar|infographic|whitepaper", re.I)
 
