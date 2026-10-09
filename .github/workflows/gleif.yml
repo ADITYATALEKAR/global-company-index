@@ -1,0 +1,20 @@
+name: gleif
+# Official GLEIF golden copy (CC0) -> headquarters country/city for our public company names.
+on:
+  workflow_dispatch:
+    inputs:
+      names_file: { description: "release asset (ws-inputs) with one company name per line", required: true }
+      zip_url: { description: "GLEIF golden copy lei2 csv zip URL", required: true }
+jobs:
+  match:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release download ws-inputs --pattern ${{ inputs.names_file }}
+      - run: curl -sL --retry 5 -o gleif.zip "${{ inputs.zip_url }}" && ls -la gleif.zip
+      - run: python3 gleif_match.py ${{ inputs.names_file }} gleif.zip gleif_hits.tsv
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: gleif-hits, path: gleif_hits.tsv, retention-days: 14 }
