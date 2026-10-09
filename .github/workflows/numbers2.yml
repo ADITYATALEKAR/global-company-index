@@ -1,0 +1,24 @@
+name: numbers2
+# Gentle market-size search for the reports whose number is outside the published range (title + H2 keywords per report).
+on:
+  workflow_dispatch:
+    inputs:
+      qfile: { description: "release asset with [{id, q: [queries]}]", required: true }
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v4
+      - env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh release download ws-inputs --pattern reports2.tsv.gz --pattern ${{ inputs.qfile }}
+      - run: python3 -c "import json; q=json.load(open('${{ inputs.qfile }}')); json.dump([x['id'] for x in q][${{ matrix.shard }}::6], open('shard.json','w'))"
+      - env: { SEARCH_ONLY: "1", SOURCES: "ddg,news", DELAY: "6", QFILE: "${{ inputs.qfile }}" }
+        run: python3 websearch.py shard.json found.jsonl
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: "n2-${{ matrix.shard }}", path: found_raw.jsonl, retention-days: 14 }

@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.join(HERE, "gh_repo")); sys.path.insert(0, HERE)
 from common import norm
 
 SOURCES = os.environ.get("SOURCES", "ddg,news").split(",")
+QMAP = {int(x["id"]): x["q"] for x in json.load(open(os.environ["QFILE"], encoding="utf-8"))} if os.environ.get("QFILE") else {}   # per-report queries (title + H2 keywords)
 DELAY = float(os.environ.get("DELAY", "0"))
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36",
       "Accept-Language": "en-US,en;q=0.9"}
@@ -114,7 +115,7 @@ def main():
             if rid in have or rid in done or rid not in sub: continue
             res = []
             if "ddg" in SOURCES:
-                qs = ((f"{sub[rid]} market size CAGR", f"{sub[rid]} market share North America Europe Asia Pacific")
+                qs = QMAP[rid] if rid in QMAP else ((f"{sub[rid]} market size CAGR", f"{sub[rid]} market share North America Europe Asia Pacific")
                       if os.environ.get("QSET") == "numbers" else (f"{sub[rid]} market key players", f"{sub[rid]} manufacturers"))
                 for q in qs:                                   # QSET=numbers: market size / CAGR / regional share summaries
                     r = ddg(q)
